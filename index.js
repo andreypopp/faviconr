@@ -6,7 +6,7 @@
   Andrey Popp (c) 2013
 */
 
-var checkRel, express, hyperquest, memoized, parseFavicon, resolveFavicon, resolveURL, sax, url,
+var checkRel, express, hyperquest, memoized, parseFavicon, resolveFavicon, resolveURL, sax, send, url,
   __slice = [].slice;
 
 url = require('url');
@@ -101,6 +101,19 @@ memoized = function(func) {
   };
 };
 
+send = function(type, req, res, icon) {
+  switch (type) {
+    case 'image':
+      return hyperquest.get(icon).pipe(res);
+    case 'json':
+      return res.send({
+        icon: icon
+      });
+    default:
+      return res.send(icon);
+  }
+};
+
 module.exports = function() {
   var app, resolveFaviconMemoized;
   resolveFaviconMemoized = memoized(resolveFavicon);
@@ -113,7 +126,7 @@ module.exports = function() {
       if (err || !icon) {
         return res.send(404);
       } else {
-        return res.send(icon);
+        return send(req.query.as || req.accepts('text, image, json'), req, res, icon);
       }
     });
   });

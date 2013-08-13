@@ -64,6 +64,12 @@ memoized = (func) ->
       cache[args] = result unless err
       cb(err, result)
 
+send = (type, req, res, icon) ->
+  switch type
+    when 'image' then hyperquest.get(icon).pipe(res)
+    when 'json' then res.send {icon}
+    else res.send icon
+
 module.exports = ->
   resolveFaviconMemoized = memoized resolveFavicon
   app = express()
@@ -73,7 +79,7 @@ module.exports = ->
       if err or not icon
         res.send 404
       else
-        res.send icon
+        send (req.query.as or req.accepts('text, image, json')), req, res, icon
 
   app
 
