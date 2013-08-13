@@ -6,7 +6,7 @@
   Andrey Popp (c) 2013
 */
 
-var checkRel, express, findFavicon, hyperquest, requestFavicon, sax, url;
+var checkRel, express, hyperquest, parseFavicon, resolveFavicon, resolveURL, sax, url;
 
 url = require('url');
 
@@ -20,7 +20,7 @@ checkRel = function(v) {
   return v === 'icon' || v === 'shortcut' || v === 'shortcut icon' || v === 'icon shortcut';
 };
 
-findFavicon = function(cb) {
+parseFavicon = function(cb) {
   var parser;
   parser = sax.createStream(false);
   parser.on('error', function(err) {
@@ -37,7 +37,7 @@ findFavicon = function(cb) {
   return parser;
 };
 
-requestFavicon = function(uri, cb) {
+resolveURL = function(uri, cb) {
   return hyperquest.get({
     uri: uri
   }, function(err, response) {
@@ -45,11 +45,35 @@ requestFavicon = function(uri, cb) {
       return cb(err);
     }
     if (/3\d\d/.exec(response.statusCode)) {
-      return requestFavicon(response.headers.location, cb);
+      return resolveURL(response.headers.location, cb);
     } else if (/2\d\d/.exec(response.statusCode)) {
       return cb(null, uri);
     } else {
       return cb(null);
+    }
+  });
+};
+
+resolveFavicon = function(uri, cb) {
+  var host, protocol, _ref;
+  _ref = url.parse(uri), host = _ref.host, protocol = _ref.protocol;
+  return resolveURL("" + protocol + "//" + host + "/favicon.ico", function(err, icon) {
+    if (icon) {
+      return cb(null, icon);
+    } else {
+      return hyperquest({
+        uri: uri,
+        method: 'GET'
+      }).pipe(parseFavicon(function(err, icon) {
+        if (err) {
+          return cb(err);
+        } else if (!icon) {
+          return cb(null);
+        } else {
+          icon = url.resolve(uri, icon);
+          return cb(null, icon);
+        }
+      }));
     }
   });
 };
@@ -59,33 +83,26 @@ module.exports = function() {
   cache = {};
   app = express();
   app.get('/', function(req, res) {
-    var host, protocol, _ref;
     if (req.query.url == null) {
       return res.send(400, 'provide URL as url param');
     }
     if (cache[req.query.url] != null) {
       return res.send(cache[req.query.url]);
     }
-    _ref = url.parse(req.query.url), host = _ref.host, protocol = _ref.protocol;
-    return requestFavicon("" + protocol + "//" + host + "/favicon.ico", function(err, icon) {
-      if (icon) {
+    return resolveFavicon(req.query.url, function(err, icon) {
+      if (err || !icon) {
+        return res.send(404);
+      } else {
         cache[req.query.url] = icon;
         return res.send(icon);
-      } else {
-        return hyperquest({
-          uri: req.query.url,
-          method: 'GET'
-        }).pipe(findFavicon(function(err, icon) {
-          if (err || (icon == null)) {
-            return res.send(404);
-          } else {
-            icon = url.resolve(req.query.url, icon);
-            cache[req.query.url] = icon;
-            return res.send(icon);
-          }
-        }));
       }
     });
   });
   return app;
 };
+
+module.exports.makeApp = module.exports;
+
+module.exports.resolveFavicon = resolveFavicon;
+
+module.exports.parseFavicon = parseFavicon;
