@@ -1,1 +1,1 @@
-web: ./cmd.js -p $PORT
+web: ./node_modules/.bin/forever ./cmd.js -p $PORT
