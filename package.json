@@ -6,7 +6,9 @@
   "scripts": {
     "test": "make test"
   },
-  "bin": {"faviconr": "./cmd.js"},
+  "bin": {
+    "faviconr": "./cmd.js"
+  },
   "dependencies": {
     "express": "~3.3.5",
     "sax": "~0.5.4",
@@ -15,7 +17,9 @@
   },
   "devDependencies": {
     "supervisor": "~0.5.3",
-    "coffee-script": "~1.6.3"
+    "coffee-script": "~1.6.3",
+    "semver": "~2.1.0",
+    "mocha": "~1.12.0"
   },
   "repository": {
     "type": "git",

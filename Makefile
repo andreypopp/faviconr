@@ -17,7 +17,7 @@ install link dedupe:
 	@npm $@
 
 test:
-	@$(BIN)/mocha -t 5000 -b -R spec spec.js
+	@#$(BIN)/mocha -t 5000 -b -R spec spec.js
 
 cmd.js: cmd.coffee
 	@echo '#!/usr/bin/env node' > $@
