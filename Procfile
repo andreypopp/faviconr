@@ -1,0 +1,1 @@
+web: ./faviconr -p $PORT

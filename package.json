@@ -9,7 +9,8 @@
   "dependencies": {
     "express": "~3.3.5",
     "sax": "~0.5.4",
-    "hyperquest": "~0.1.7"
+    "hyperquest": "~0.1.7",
+    "commander": "~2.0.0"
   },
   "devDependencies": {
     "supervisor": "~0.5.3",
