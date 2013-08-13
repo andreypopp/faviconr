@@ -1,4 +1,4 @@
-#!/usr/bin/env coffee
+#!/usr/bin/env node
 
 prg       = require 'commander'
 pkg       = require './package.json'

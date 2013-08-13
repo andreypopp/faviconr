@@ -1,1 +1,1 @@
-web: ./faviconr -p $PORT
+web: ./cmd.js -p $PORT

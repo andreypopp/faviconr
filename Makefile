@@ -19,6 +19,10 @@ install link dedupe:
 test:
 	@$(BIN)/mocha -t 5000 -b -R spec spec.js
 
+cmd.js: cmd.coffee
+	@echo '#!/usr/bin/env node' > $@
+	@$(BIN)/coffee -bcp $< >> $@
+
 %.js: %.coffee
 	@$(BIN)/coffee -bcp $< > $@
 
