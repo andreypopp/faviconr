@@ -19,13 +19,15 @@ checkRel = (v) ->
 
 parseFavicon = (cb) ->
   parser = sax.createStream(false)
+  seen = false
   parser.on 'error', (err) ->
     cb(err)
   parser.on 'opentag', (node) ->
     if node.name == 'LINK' and checkRel node.attributes.REL
+      seen = true
       cb(null, node.attributes.HREF)
   parser.on 'end', (node) ->
-    cb(null)
+    cb(null) unless seen
   parser
 
 resolveURL = (uri, cb) ->
@@ -54,17 +56,23 @@ resolveFavicon = (uri, cb) ->
           icon = url.resolve(uri, icon)
           cb(null, icon)
 
-module.exports = ->
+memoized = (func) ->
   cache = {}
+  (args..., cb) ->
+    return cb(null, cache[args]) if cache[args]?
+    func args..., (err, result) ->
+      cache[args] = result unless err
+      cb(err, result)
+
+module.exports = ->
+  resolveFaviconMemoized = memoized resolveFavicon
   app = express()
   app.get '/', (req, res) ->
     return res.send 400, 'provide URL as url param' unless req.query.url?
-    return res.send cache[req.query.url] if cache[req.query.url]?
-    resolveFavicon req.query.url, (err, icon) ->
+    resolveFaviconMemoized req.query.url, (err, icon) ->
       if err or not icon
         res.send 404
       else
-        cache[req.query.url] = icon
         res.send icon
 
   app

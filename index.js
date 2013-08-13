@@ -6,7 +6,8 @@
   Andrey Popp (c) 2013
 */
 
-var checkRel, express, hyperquest, parseFavicon, resolveFavicon, resolveURL, sax, url;
+var checkRel, express, hyperquest, memoized, parseFavicon, resolveFavicon, resolveURL, sax, url,
+  __slice = [].slice;
 
 url = require('url');
 
@@ -21,18 +22,22 @@ checkRel = function(v) {
 };
 
 parseFavicon = function(cb) {
-  var parser;
+  var parser, seen;
   parser = sax.createStream(false);
+  seen = false;
   parser.on('error', function(err) {
     return cb(err);
   });
   parser.on('opentag', function(node) {
     if (node.name === 'LINK' && checkRel(node.attributes.REL)) {
+      seen = true;
       return cb(null, node.attributes.HREF);
     }
   });
   parser.on('end', function(node) {
-    return cb(null);
+    if (!seen) {
+      return cb(null);
+    }
   });
   return parser;
 };
@@ -78,22 +83,36 @@ resolveFavicon = function(uri, cb) {
   });
 };
 
-module.exports = function() {
-  var app, cache;
+memoized = function(func) {
+  var cache;
   cache = {};
+  return function() {
+    var args, cb, _i;
+    args = 2 <= arguments.length ? __slice.call(arguments, 0, _i = arguments.length - 1) : (_i = 0, []), cb = arguments[_i++];
+    if (cache[args] != null) {
+      return cb(null, cache[args]);
+    }
+    return func.apply(null, __slice.call(args).concat([function(err, result) {
+      if (!err) {
+        cache[args] = result;
+      }
+      return cb(err, result);
+    }]));
+  };
+};
+
+module.exports = function() {
+  var app, resolveFaviconMemoized;
+  resolveFaviconMemoized = memoized(resolveFavicon);
   app = express();
   app.get('/', function(req, res) {
     if (req.query.url == null) {
       return res.send(400, 'provide URL as url param');
     }
-    if (cache[req.query.url] != null) {
-      return res.send(cache[req.query.url]);
-    }
-    return resolveFavicon(req.query.url, function(err, icon) {
+    return resolveFaviconMemoized(req.query.url, function(err, icon) {
       if (err || !icon) {
         return res.send(404);
       } else {
-        cache[req.query.url] = icon;
         return res.send(icon);
       }
     });
