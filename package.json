@@ -1,6 +1,6 @@
 {
   "name": "faviconr",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Service (and a pluggable Node.js express app) for resolving a favicon for a given URL",
   "main": "index.js",
   "scripts": {
