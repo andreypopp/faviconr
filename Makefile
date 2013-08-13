@@ -1,19 +1,26 @@
 BIN = ./node_modules/.bin
 REPO = $(shell cat .git/config | grep url | xargs echo | sed -E 's/^url = //g')
 REPONAME = $(shell echo $(REPO) | sed -E 's_.+:([a-zA-Z0-9_\-]+)/([a-zA-Z0-9_\-]+)\.git_\1/\2_')
+SRC = $(wildcard *.coffee)
+LIB = $(SRC:%.coffee=%.js)
 
 develop:
 	@$(BIN)/supervisor -q \
 		-i node_modules/ \
 		-e 'coffee|js' \
 		-x $(BIN)/coffee \
-		-- faviconr
+		-- cmd.coffee
+
+build: $(LIB)
 
 install link dedupe:
 	@npm $@
 
 test:
 	@$(BIN)/mocha -t 5000 -b -R spec spec.js
+
+%.js: %.coffee
+	@$(BIN)/coffee -bcp $< > $@
 
 release-patch: build test
 	@$(call release,patch)
